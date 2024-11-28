@@ -1,0 +1,38 @@
+[package]
+name = "yozefu-lib"
+description = "Core library of yozefu"
+readme = "README.md"
+keywords = ["kafka", "consumer", "records"]
+categories = ["data-structures", "parser-implementations"]
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = { version = "1.0.133", features = ["preserve_order"] }
+chrono = { version = "0.4.39", features = ["serde"], optional = true }
+itertools = "0.13.0"
+strum = { version = "0.26.3", features = ["derive", "strum_macros"], optional = true }
+fuzzydate = {version = "0.2.2", optional = true }
+nom = "8.0.0-beta.1"
+rdkafka = { version = "0.37.0", features = ["cmake-build"], optional = true}
+url = "2.5.4"
+apache-avro = "0.17.0"
+reqwest = { version = "0.12.9", features = ["json"] }
+
+
+[dev-dependencies]
+insta = { version = "1.41.1", features = ["filters", "glob"] }
+protobuf = "3.7.1"
+
+[features]
+native = [
+    "dep:chrono",
+    "dep:rdkafka",
+    "dep:fuzzydate",
+    "dep:strum",
+]

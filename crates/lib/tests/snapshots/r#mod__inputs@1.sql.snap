@@ -1,0 +1,72 @@
+---
+source: crates/lib/tests/mod.rs
+expression: parse_search_query(input)
+input_file: crates/lib/tests/inputs/1.sql
+---
+Ok(
+    (
+        "",
+        SearchQuery {
+            expression: OrExpression(
+                [
+                    AndTerm(
+                        Atom(
+                            Filter(
+                                Filter {
+                                    name: "my-wasm-filter",
+                                    parameters: [
+                                        String(
+                                            "cool",
+                                        ),
+                                        String(
+                                            "cat",
+                                        ),
+                                    ],
+                                },
+                            ),
+                        ),
+                    ),
+                    AndTerm(
+                        Atom(
+                            Parenthesis(
+                                OrTerm(
+                                    AndExpression(
+                                        [
+                                            Atom(
+                                                Compare(
+                                                    TimestampBetween(
+                                                        2024-05-28T17:55:08.145+02:00,
+                                                        [datetime],
+                                                    ),
+                                                ),
+                                            ),
+                                            Atom(
+                                                Compare(
+                                                    Value(
+                                                        None,
+                                                        Contain,
+                                                        "foundation",
+                                                    ),
+                                                ),
+                                            ),
+                                        ],
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                ],
+            ),
+            limit: Some(
+                1000,
+            ),
+            from: Some(
+                Beginning,
+            ),
+            order_by: OrderBy {
+                order: Key,
+                keyword: Desc,
+            },
+        },
+    ),
+)

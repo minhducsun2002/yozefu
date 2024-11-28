@@ -1,0 +1,31 @@
+[package]
+name = "yozefu"
+description = "yozefu is a CLI tool for Apache kafka. It allows you to navigate topics and search Kafka records."
+readme = "README.md"
+keywords = ["kafka", "consumer", "ratatui"]
+categories = [
+    "command-line-utilities",
+    "command-line-interface",
+    "gui",
+    "development-tools",
+]
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "yozf"
+path = "src/main.rs"
+
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+command = { workspace = true }
+
+[features]
+ssl-vendored = [
+    "command/ssl-vendored"
+]

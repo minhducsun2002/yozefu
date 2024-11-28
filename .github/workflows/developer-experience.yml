@@ -1,0 +1,76 @@
+name: Developer Experience
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+  RUSTDOCFLAGS: '--deny warnings'
+  MINIMUM_SUPPORTED_RUST_VERSION: 1.80.1
+  GOLANG_VERSION: 1.23.3
+
+on:
+  schedule:
+    - cron: "0 0 1 * *"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  try-it:
+   runs-on: ubuntu-latest
+   steps:
+      - uses: actions/checkout@v4
+      - name: Setup JBang
+        uses: jbangdev/setup-jbang@main
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Run try-it.sh
+        run: bash docs/try-it.sh 
+        env: 
+          YOZEFU_API_URL: http://localhost:8082/schemas/types
+
+  wasm-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+      - name: Setup Go ${{ env.GOLANG_VERSION }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GOLANG_VERSION }}
+      - name: Install extism CLI
+        run: go install github.com/extism/cli/extism@latest
+      - uses: Swatinem/rust-cache@v2
+      - name: Temporary fix in Cargo.toml
+        run: sed -i -E 's#git = "ssh.+#path = "../../wasm-types" }#g' crates/wasm-blueprints/rust/Cargo.toml
+      - name: Build rust search filter
+        run: make -C crates/wasm-blueprints/rust/ build test
+
+  wasm-golang:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go ${{ env.GOLANG_VERSION }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GOLANG_VERSION }}
+      - name: Install extism CLI
+        run: go install github.com/extism/cli/extism@latest
+      - uses: acifani/setup-tinygo@v2
+        with:
+          tinygo-version: '0.34.0'
+      - name: Build golang search filter
+        run: make -C crates/wasm-blueprints/golang/ build test

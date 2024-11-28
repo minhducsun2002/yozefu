@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message Key {
+    string id = 1;
+}

@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+message Address {
+
+  message Geometry {
+    string type = 1;
+    repeated double coordinates = 2;
+  }
+
+  message Properties {
+    string label = 1;
+    double score = 2;
+    string id = 3;
+    string name = 4;
+    string postcode = 5;
+    string citycode = 6;
+    double x = 7;
+    double y = 8;
+    string city = 9;
+    string context = 10;
+    string type = 11;
+    double importance = 12;
+    string street = 13;
+    optional string banId = 14;
+    optional double population = 15;
+    optional string municipality = 16;
+    optional string locality = 17;
+    optional string oldcitycode = 18;
+    optional string oldcity = 19;
+  }
+
+  string type = 1;
+  Geometry geometry = 2;
+  Properties properties = 3;
+}

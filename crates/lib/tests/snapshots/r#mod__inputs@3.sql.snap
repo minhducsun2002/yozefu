@@ -1,0 +1,146 @@
+---
+source: crates/lib/tests/mod.rs
+expression: parse_search_query(input)
+input_file: crates/lib/tests/inputs/3.sql
+---
+Ok(
+    (
+        "",
+        SearchQuery {
+            expression: OrExpression(
+                [
+                    AndExpression(
+                        [
+                            Atom(
+                                Parenthesis(
+                                    OrExpression(
+                                        [
+                                            AndTerm(
+                                                Atom(
+                                                    Parenthesis(
+                                                        OrTerm(
+                                                            AndExpression(
+                                                                [
+                                                                    Atom(
+                                                                        Compare(
+                                                                            Topic(
+                                                                                Equal,
+                                                                                "system",
+                                                                            ),
+                                                                        ),
+                                                                    ),
+                                                                    Atom(
+                                                                        Compare(
+                                                                            Key(
+                                                                                Contain,
+                                                                                "restart",
+                                                                            ),
+                                                                        ),
+                                                                    ),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                            AndTerm(
+                                                Not(
+                                                    Parenthesis(
+                                                        OrTerm(
+                                                            AndExpression(
+                                                                [
+                                                                    Atom(
+                                                                        Compare(
+                                                                            Value(
+                                                                                None,
+                                                                                StartWith,
+                                                                                "ignored",
+                                                                            ),
+                                                                        ),
+                                                                    ),
+                                                                    Atom(
+                                                                        Compare(
+                                                                            Partition(
+                                                                                GreaterThan,
+                                                                                2,
+                                                                            ),
+                                                                        ),
+                                                                    ),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ],
+                                    ),
+                                ),
+                            ),
+                            Atom(
+                                Parenthesis(
+                                    OrTerm(
+                                        AndTerm(
+                                            Atom(
+                                                Compare(
+                                                    TimestampBetween(
+                                                        [datetime],
+                                                        [datetime],
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                            Atom(
+                                Filter(
+                                    Filter {
+                                        name: "myFilter",
+                                        parameters: [
+                                            String(
+                                                "check",
+                                            ),
+                                            String(
+                                                "error",
+                                            ),
+                                            Number(
+                                                500,
+                                            ),
+                                        ],
+                                    },
+                                ),
+                            ),
+                        ],
+                    ),
+                    AndTerm(
+                        Atom(
+                            Filter(
+                                Filter {
+                                    name: "myFilter",
+                                    parameters: [
+                                        String(
+                                            "type",
+                                        ),
+                                        Number(
+                                            100,
+                                        ),
+                                    ],
+                                },
+                            ),
+                        ),
+                    ),
+                ],
+            ),
+            limit: Some(
+                50,
+            ),
+            from: Some(
+                Beginning,
+            ),
+            order_by: OrderBy {
+                order: Key,
+                keyword: Desc,
+            },
+        },
+    ),
+)

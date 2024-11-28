@@ -1,0 +1,15 @@
+[package]
+name = "yozefu-wasm-blueprints-rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+extism-pdk = "1.3.0"
+yozefu-wasm-types = { git = "ssh://git@github.com/MAIF/yozefu.git", branch="main" }
+#yozefu-wasm-types = { path = "../../wasm-types" }
+
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]

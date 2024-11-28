@@ -1,0 +1,284 @@
+name: Publish
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+  RUSTDOCFLAGS: '--deny warnings'
+  MINIMUM_SUPPORTED_RUST_VERSION: 1.80.1
+  DOCKER_REGISTRY: ghcr.io
+
+permissions:
+  id-token: write
+  packages: write
+  contents: write
+  attestations: write
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_call:
+#  workflow_run:
+#    workflows: ['Tag']
+#    types:
+#      - completed
+
+jobs:
+  version:
+    name: Determine version to publish
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - id: release
+        run: echo "version=$(cargo pkgid --manifest-path crates/bin/Cargo.toml | cut -d '@' -f2)" >> "$GITHUB_OUTPUT"
+
+  create-release:
+    runs-on: ubuntu-latest
+    name: Create release
+    needs: version
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create github release
+        run: gh release create "v${{ needs.version.outputs.version }}" --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  changelog:
+    needs: [version, create-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: git fetch --tags origin
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install git-cliff
+        run: cargo install git-cliff
+      - name: Generate a changelog
+        run: |
+          if [ -f CHANGELOG.md ]; then
+            git-cliff --config github --prepend CHANGELOG.md --latest
+          else
+            git-cliff --config github --output CHANGELOG.md
+          fi
+        env:
+          OUTPUT: CHANGELOG.md
+          GITHUB_REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit changelog
+        run: |
+          git checkout -b "changelog/${{ needs.version.outputs.version }}"
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          set +e
+          git add CHANGELOG.md
+          git commit -m "chore: Update changelog"
+          git push origin "changelog/${{ needs.version.outputs.version }}" --force
+      - name: Create pull request for changelog
+        run: |
+          alreadyExists=$(gh pr list --json headRefName | jq '.[] | select(.headRefName == "dependabot/cargo/${{ needs.version.outputs.version }}") | any')
+          if [[ "$alreadyExists" == "" ]]; then
+            gh pr create --title "Changelog for ${{ needs.version.outputs.version }}" --body "This PR updates the changelog for version ${{ needs.version.outputs.version }}."
+          fi
+        env: 
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-publish:
+    needs: [version, create-release]
+    name: Build and publish
+    runs-on: ${{ matrix.platforms.os }}
+    strategy:
+      matrix:
+        platforms:
+          - os: macOS-latest
+            target: aarch64-apple-darwin
+            features: "--features ssl-vendored"
+          - os: macos-latest-large
+            target: x86_64-apple-darwin
+            features: "--features ssl-vendored"
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            features: "--features ssl-vendored"
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            features: "--features ssl-vendored"
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+            features: ""
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            features: "--features ssl-vendored"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: houseabsolute/actions-rust-cross@v0.0.17
+        with:
+          target: ${{ matrix.platforms.target }}
+          args: "--verbose --locked --release ${{ matrix.platforms.features }}"
+          strip: true
+      
+      - name: Setup variables
+        id: variables
+        shell: bash
+        run: |
+          name="$(cargo metadata --manifest-path crates/bin/Cargo.toml --no-deps --format-version=1 | jq -r '.packages[] | select(.name=="yozefu").targets[0].name')"
+          source=target/${{ matrix.platforms.target }}/release/${name}
+          archive="yozefu-${{matrix.platforms.target }}"
+          subjectName="${name}-${{matrix.platforms.target }}-${{ needs.version.outputs.version }}"
+          binaryName="${subjectName}"
+          destination="dist/${binaryName}"
+          if [ "${{ matrix.platforms.os }}" = "windows-latest" ]; then
+             source=${source}.exe
+             binaryName=${binaryName}.exe
+             destination="dist/${binaryName}"
+          fi
+          {
+            echo "name=${name}"
+            echo "source=${source}"
+            echo "archive=${archive}"
+            echo "subjectName=${subjectName}"
+            echo "destination=${destination}"
+            echo "binaryName=${binaryName}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Attest
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: "${{ steps.variables.outputs.source }}"
+          subject-name: "${{ steps.variables.outputs.archive }}-${{ needs.version.outputs.version }}"
+
+      - name: Create temp dir
+        run: mkdir -p dist
+
+      - name: Rename binary
+        shell: bash
+        run: mv "${{ steps.variables.outputs.source }}" "${{ steps.variables.outputs.destination }}"
+
+      - name: Build archive for Windows
+        shell: bash
+        working-directory: ./dist
+        if: matrix.platforms.os == 'windows-latest'
+        run: 7z a "${{ steps.variables.outputs.archive }}.zip" "${{ steps.variables.outputs.binaryName }}"
+
+      - name: Build archive for unix systems
+        if: matrix.platforms.os != 'windows-latest'
+        shell: bash
+        working-directory: ./dist
+        run: |
+          tar cvzf "${{ steps.variables.outputs.archive }}.tar.gz" "${{ steps.variables.outputs.binaryName }}" 
+      - name: Clean release directory
+        shell: bash
+        run: rm -f "dist/${{ steps.variables.outputs.binaryName }}"
+
+      - name: cargo install cargo-cyclonedx
+        run: cargo install cargo-cyclonedx
+
+      - name: Generate SBOM
+        run: cargo cyclonedx --describe binaries --format json ${{ matrix.platforms.features }} --target ${{ matrix.platforms.target }}
+
+      - name: Rename SBOM
+        shell: bash
+        run: mv crates/bin/${{ steps.variables.outputs.name }}_bin.cdx.json "dist/${{ steps.variables.outputs.archive }}.cdx.json"
+
+      - name: Upload binary
+        shell: bash
+        run: gh release upload "v${{ needs.version.outputs.version }}" dist/* --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+# https://docs.github.com/en/actions/use-cases-and-examples/publishing-packages/publishing-docker-images
+  publish-docker-image:
+    name: Docker image
+    runs-on: ubuntu-latest
+    needs: [version, create-release]
+    permissions:
+        contents: read
+        packages: write
+        attestations: write
+        id-token: write
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        tags: |
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=raw,value=${{ needs.version.outputs.version }}
+        images: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}
+        labels: |
+          org.opencontainers.image.description=Yozefu is a CLI tool for Apache kafka. It allows you to navigate topics and search Kafka records.
+          org.opencontainers.image.vendor=Yann Prono
+          org.opencontainers.image.licenses=Apache-2.0
+      env:
+        DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      id: push
+      with:
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        labels: ${{ steps.meta.outputs.labels }}
+        sbom: true
+        annotations: ${{ steps.meta.outputs.annotations }}
+    # https://github.com/actions/attest-build-provenance
+    - name: Generate artifact attestation
+      if: false
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}
+        subject-digest: ${{ steps.push.outputs.digest }}
+        push-to-registry: true
+
+  publish-to-registry:
+    runs-on: ubuntu-latest
+    name: Publish to registry
+    needs: [version, build-and-publish]
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Make sure crates are ready
+        continue-on-error: true
+        run: |
+          cargo publish --dry-run -p yozefu-lib
+          cargo publish --dry-run -p yozefu-wasm-types
+          cargo publish --dry-run -p yozefu-app
+          cargo publish --dry-run -p yozefu-tui
+          cargo publish --dry-run -p yozefu-command
+          cargo publish --dry-run -p yozefu-bin
+      - name: Publish the crates
+        run: |
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-lib
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-wasm-types
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-app
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-tui
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-command
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-bin

@@ -1,0 +1,15 @@
+{
+  "name": "Key",
+  "namespace": "io.maif.yozefu",
+  "type": "record",
+  "fields": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "sunny",
+      "type": "boolean"
+    }
+  ]
+}

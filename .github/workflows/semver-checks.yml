@@ -1,0 +1,99 @@
+name: Semver checks
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+  RUSTDOCFLAGS: '--deny warnings'
+  MINIMUM_SUPPORTED_RUST_VERSION: 1.80.1
+
+permissions:
+  packages: write
+  contents: write
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - CHANGELOG.md
+  workflow_dispatch:
+  workflow_run:
+    workflows: ['Prepare a release']
+    types:
+      - completed
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-branches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: you can't run this action on 'main' branch
+        run: |
+          if [[ "${{ github.ref_name }}" = "main" ]]; then
+            exit 1
+          fi
+  cargo-semver-checks:
+    needs: check-branches
+    permissions:
+      pull-requests: write
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-semver-checks
+        run: cargo install cargo-semver-checks
+      - name: List the releases on GitHub
+        id: current
+        run: echo "version=$(git tag --sort=-creatordate | head -n 1)" >> "$GITHUB_OUTPUT"
+      - name: Get next version
+        id: next
+        run: echo "version=v$(cargo pkgid --manifest-path crates/bin/Cargo.toml | cut -d '@' -f2)" >> "$GITHUB_OUTPUT"
+      - name: Make sure version is updated
+        if: ${{ steps.current.outputs.version == steps.next.outputs.version }}
+        run: |
+          echo "::warning title=Next version:: Last public version is '${{ steps.current.outputs.version }}' but version of this branch is '${{ steps.next.outputs.version }}'. Did you forget to update the version? More details at https://github.com/MAIF/yozefu/blob/main/docs/release.md"
+          printf 'This pull request is not ready because the crate version is equals to the latest git tag version `' > report.md
+          printf "${{ steps.next.outputs.version }}" >> report.md
+          printf '`. I think you forgot to bump the version. More details at https://github.com/MAIF/yozefu/blob/main/docs/release.md' >> report.md
+          gh pr comment ${{ github.event.number }} --body-file ./report.md
+          exit 1
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Show release type
+        id: semver
+        run: |
+          wget -O semver "https://raw.githubusercontent.com/fsaintjacques/semver-tool/master/src/semver"
+          chmod u+x ./semver
+          echo "release=$(./semver diff ${{ steps.current.outputs.version }} ${{ steps.next.outputs.version }})" >> "$GITHUB_OUTPUT"
+      - name: Prepare report.md
+        if: ${{ steps.next.outputs.version == '' }}
+        run: |
+          {
+          echo "> [!WARNING]"
+          echo "> According to \`cargo-semver-checks\`, the next release version doesn\'t respect semantic versioning."
+          echo '```bash'
+          } > ./report.md
+      - name: Run cargo semver-checks
+        if: ${{ steps.next.outputs.version != '' && steps.semver.outputs.release  != '' }}
+        id: check
+        run: cargo semver-checks --color never --package yozefu-lib --package yozefu-app --package yozefu-types --baseline-rev "${{ steps.current.outputs.version }}" --release-type "${{ steps.semver.outputs.release }}" >> "$GITHUB_OUTPUT"
+      - name: Publish semver-checks report
+        if: ${{ steps.check.outcome != 'success' && steps.check.outcome != 'skipped' }}
+        run: |
+          echo "${{ steps.check.outputs.version }}" >> report.md
+          printf '\n```' >> ./report.md
+          gh pr comment ${{ github.event.number }} --body-file ./report.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

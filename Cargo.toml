@@ -1,0 +1,69 @@
+[workspace]
+members = [
+    "crates/lib",
+    "crates/bin",
+    "crates/command",
+    "crates/app",
+    "crates/tui",
+    "crates/wasm-types",
+    # "crates/wasm-blueprints/rust",
+]
+
+default-members = [
+    "crates/lib",
+    "crates/bin",
+    "crates/command",
+    "crates/app",
+    "crates/tui",
+    "crates/wasm-types",
+#    "crates/wasm-blueprints/rust",
+]
+
+resolver = "2"
+
+[workspace.package]
+version = "0.0.1"
+edition = "2021"
+authors = ["Yann Prono <yann.prono@maif.fr>"]
+readme = "README.md"
+homepage = "https://github.com/MAIF/yozefu"
+repository = "https://github.com/MAIF/yozefu.git"
+license = "Apache-2.0"
+
+
+[workspace.dependencies]
+lib = { package = "yozefu-lib", path = "crates/lib/", version = "0.0.1" }
+app = { package = "yozefu-app", path = "crates/app/", version = "0.0.1" }
+command = { package = "yozefu-command", path = "crates/command/", version = "0.0.1" }
+yozefu = { package = "yozefu", path = "crates/bin/", version = "0.0.1" }
+tui = { package = "yozefu-tui", path = "crates/tui/", version = "0.0.1" }
+wasm-types = { package = "wasm-types", path = "crates/wasm-types/", version = "0.0.1" }
+
+[profile.release]
+opt-level = 3
+debug = "none"
+debug-assertions = false
+overflow-checks = true
+strip = true
+lto = "fat"
+panic = "abort"
+incremental = false
+
+[workspace.metadata.release]
+shared-version = true
+tag-message = "chore: Release version {{version}}"
+pre-release-commit-message = "chore: Release version {{version}}"
+tag-name = "{{version}}"
+
+[workspace.metadata.cross.target.aarch64-unknown-linux-gnu]
+pre-build = [
+    "dpkg --add-architecture $CROSS_DEB_ARCH",
+    "apt-get update && apt-get --assume-yes install libssl-dev:$CROSS_DEB_ARCH",
+]
+
+[workspace.metadata.cross.target.'cfg(target_os = "windows")']
+pre-build = [
+    "echo \"VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT\" | Out-File -FilePath $env:GITHUB_ENV -Append",
+    "vcpkg install openssl:x64-windows-static-md",
+    "vcpkg install openssl:x64-windows-static",
+]

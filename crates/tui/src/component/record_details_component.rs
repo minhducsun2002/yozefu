@@ -1,0 +1,301 @@
+//! Component showing all the details of a given kafka record.
+use bytesize::ByteSize;
+use crossterm::event::{KeyCode, KeyEvent};
+
+use itertools::Itertools;
+use lib::KafkaRecord;
+use ratatui::{
+    layout::{Margin, Rect},
+    style::{Style, Stylize},
+    text::{Line, Span, Text},
+    widgets::{
+        Block, Borders, Clear, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+        Wrap,
+    },
+    Frame,
+};
+use tokio::sync::mpsc::UnboundedSender;
+
+use crate::{error::TuiError, Action};
+
+use super::{Component, ComponentName, Shortcut, State};
+
+#[derive(Default)]
+pub struct RecordDetailsComponent<'a> {
+    pub record: Option<KafkaRecord>,
+    pub scroll: usize,
+    pub lines: usize,
+    pub text: Paragraph<'a>,
+    pub rect: Rect,
+    pub scroll_size: u16,
+    pub scrollbar_state: ScrollbarState,
+    pub action_tx: Option<UnboundedSender<Action>>,
+}
+
+impl RecordDetailsComponent<'_> {
+    pub fn new(_state: &State) -> Self {
+        Self {
+            ..Default::default()
+        }
+    }
+
+    fn generate_span(key: &str, value: String) -> Line<'_> {
+        Line::from(vec![
+            Span::styled(
+                format!("{:>12}: ", key.to_string()),
+                Style::default().bold(),
+            ),
+            Span::styled(value.to_string(), Style::default()),
+        ])
+    }
+
+    pub fn set_scroll_bar_state(&mut self, lines: usize) {
+        self.lines = lines;
+        if self.lines < self.rect.height as usize {
+            self.scroll = 0;
+            self.scroll_size = 0;
+        } else {
+            self.scroll = 0;
+            self.scroll_size = self
+                .lines
+                .saturating_sub(self.rect.height.saturating_sub(10) as usize)
+                as u16;
+        }
+        self.scrollbar_state = ScrollbarState::new(self.scroll_size.into()).position(self.scroll);
+    }
+
+    fn compute_record_rendering(&mut self) {
+        if self.record.is_none() {
+            self.record = Some(KafkaRecord::default());
+        }
+
+        let record = self.record.as_ref().unwrap();
+        let mut to_render = vec![
+            Line::default(),
+            Self::generate_span("Topic", record.topic.clone()),
+            Self::generate_span(
+                "Timestamp",
+                self.record
+                    .as_ref()
+                    .unwrap()
+                    .timestamp
+                    .unwrap_or(0)
+                    .to_string(),
+            ),
+            Self::generate_span(
+                "DateTime",
+                self.record
+                    .as_ref()
+                    .unwrap()
+                    .timestamp_as_local_date_time()
+                    .map(|e| e.to_rfc3339_opts(chrono::SecondsFormat::Millis, false))
+                    .unwrap_or("".to_string()),
+            ),
+            Self::generate_span("Offset", record.offset.to_string()),
+            Self::generate_span("Partition", record.partition.to_string()),
+            Self::generate_span("Size", ByteSize(record.size as u64).to_string()),
+            Self::generate_span("Headers", "".to_string()),
+        ];
+
+        if let Some(s) = &record.key_schema {
+            match &s.schema_type {
+                Some(t) => to_render.push(Self::generate_span(
+                    "Key schema",
+                    format!("{} - {}", s.id, t),
+                )),
+                None => to_render.push(Self::generate_span("Key schema", s.id.to_string())),
+            }
+        }
+        if let Some(s) = &record.value_schema {
+            match &s.schema_type {
+                Some(t) => to_render.push(Self::generate_span(
+                    "Value schema",
+                    format!("{} - {}", s.id, t),
+                )),
+                None => to_render.push(Self::generate_span("Value schema", s.id.to_string())),
+            }
+        }
+
+        let longest_header_key = self
+            .record
+            .as_ref()
+            .unwrap()
+            .headers
+            .keys()
+            .map(|e| e.len())
+            .max()
+            .unwrap_or(0);
+
+        let mut formatted_headers = vec![];
+        for entry in self
+            .record
+            .as_ref()
+            .unwrap()
+            .headers
+            .iter()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .enumerate()
+        {
+            let e = entry.1;
+            match entry.0 {
+                0 => formatted_headers.push(Span::styled(
+                    format!("{: <width$}", e.0, width = longest_header_key),
+                    Style::default().italic(),
+                )),
+                _ => formatted_headers.push(Span::styled(
+                    format!("              {: <width$}", e.0, width = longest_header_key),
+                    Style::default().italic(),
+                )),
+            };
+            formatted_headers.push(Span::styled(" : ", Style::default()));
+            formatted_headers.push(Span::styled(e.1.to_string(), Style::default()));
+        }
+
+        if !formatted_headers.is_empty() {
+            let first = formatted_headers.iter().take(3).collect_vec();
+            let line = to_render.last_mut().unwrap();
+            line.spans.remove(1);
+            for span in first {
+                line.push_span(span.clone());
+            }
+        }
+
+        for ppp in &formatted_headers.into_iter().skip(3).chunks(3) {
+            to_render.push(Line::from(ppp.collect_vec()));
+        }
+
+        to_render.extend(vec![
+            Self::generate_span("Key", record.key_as_string.clone()),
+            Self::generate_span("Value", "".to_string()),
+        ]);
+
+        //let syntax = SYNTAX_SET.find_syntax_by_extension("json").unwrap();
+        //let mut h = HighlightLines::new(syntax, &self.theme);
+        //
+        //let mut payload_lines = vec![];
+        //for line in LinesWithEndings::from(&value_s) {
+        //    let ranges: Vec<(syntect::highlighting::Style, &str)> =
+        //        h.highlight_line(line, &SYNTAX_SET).unwrap();
+        //    let escaped = as_24_bit_terminal_escaped(&ranges[..], false);
+        //    let output = escaped.into_text().unwrap();
+        //    payload_lines.extend(output.lines);
+        //}
+        let text = Text::from(record.value.to_string_pretty());
+        to_render.extend(text.lines);
+
+        let p = Paragraph::new(to_render)
+            .wrap(Wrap { trim: true })
+            .scroll((self.scroll as u16, 0));
+        self.set_scroll_bar_state(p.line_count(self.rect.width) + 4);
+        self.text = p;
+    }
+}
+
+impl Component for RecordDetailsComponent<'_> {
+    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) -> Result<(), TuiError> {
+        self.action_tx = Some(tx);
+        Ok(())
+    }
+
+    fn id(&self) -> ComponentName {
+        ComponentName::RecordDetails
+    }
+
+    fn handle_key_events(&mut self, key: KeyEvent) -> Result<Option<Action>, TuiError> {
+        match key.code {
+            KeyCode::Char('k') => {
+                self.scroll = (self.scroll + 1)
+                    .min(self.lines)
+                    .min(self.scroll_size as usize);
+                self.scrollbar_state = self.scrollbar_state.position(self.scroll);
+            }
+            KeyCode::Char('j') if self.scroll > 0 => {
+                self.scroll -= 1;
+                self.scrollbar_state = self.scrollbar_state.position(self.scroll);
+            }
+            KeyCode::Char('[') => {
+                self.scroll = 0;
+            }
+            KeyCode::Char(']') => {
+                self.scroll = self.scroll_size.into();
+            }
+            KeyCode::Char('o') => {
+                if let Some(record) = &self.record {
+                    self.action_tx
+                        .as_ref()
+                        .unwrap()
+                        .send(Action::Open(record.clone()))?;
+                }
+            }
+            KeyCode::Char('c') => {
+                if let Some(record) = &self.record {
+                    self.action_tx
+                        .as_ref()
+                        .unwrap()
+                        .send(Action::CopyToClipboard(record.clone()))?;
+                }
+            }
+            KeyCode::Char('e') => {
+                if let Some(record) = &self.record {
+                    self.action_tx
+                        .as_ref()
+                        .unwrap()
+                        .send(Action::Export(record.clone()))?;
+                }
+            }
+            _ => (),
+        }
+        self.scrollbar_state = self.scrollbar_state.position(self.scroll);
+        Ok(None)
+    }
+
+    fn update(&mut self, action: Action) -> Result<Option<Action>, TuiError> {
+        if let Action::ShowRecord(record) = action {
+            self.record = Some(record);
+            self.compute_record_rendering();
+        };
+        Ok(None)
+    }
+
+    fn shortcuts(&self) -> Vec<Shortcut> {
+        vec![
+            Shortcut::new("J/K", "Scroll"),
+            Shortcut::new("↑↓", "Previous/next record"),
+        ]
+    }
+
+    fn draw(&mut self, f: &mut Frame<'_>, rect: Rect, state: &State) -> Result<(), TuiError> {
+        if self.rect != rect {
+            self.rect = rect;
+            self.compute_record_rendering();
+        }
+        let p = self
+            .text
+            .clone()
+            .wrap(Wrap { trim: false })
+            .scroll((self.scroll as u16, 0));
+
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(Some("▲"))
+            .end_symbol(Some("▼"));
+
+        f.render_widget(Clear, rect);
+        let block = Block::new()
+            .borders(Borders::ALL)
+            .padding(Padding::symmetric(4, 0))
+            .title(" Record details ");
+        let block = self.make_block_focused_with_state(state, block);
+
+        f.render_widget(p.block(block), rect);
+
+        f.render_stateful_widget(
+            scrollbar,
+            rect.inner(Margin {
+                vertical: 1,
+                horizontal: 0,
+            }),
+            &mut self.scrollbar_state,
+        );
+        Ok(())
+    }
+}

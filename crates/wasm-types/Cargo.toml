@@ -1,0 +1,18 @@
+[package]
+name = "yozefu-wasm-types"
+readme = "README.md"
+description = "Types and structures for defining WebAssembly modules"
+keywords = ["wasm", "kafka", "record"]
+categories = []
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+
+
+[dependencies]
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = { version = "1.0.133", features = ["preserve_order"] }
+lib = { workspace = true }

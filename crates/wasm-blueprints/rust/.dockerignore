@@ -1,0 +1,7 @@
+Dockerfile
+target
+README.md
+.git
+.gitignore
+.dockerignore
+module.wasm
