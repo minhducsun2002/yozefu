@@ -1,8 +1,8 @@
 [package]
 name = "yozefu-app"
 description = "A TUI for browsing kafka topics"
-keywords = ["kafka", "consumer"]
-categories = ["command-line-utilities", "development-tools"]
+keywords = ["kafka", "consumer", "search", "avro"]
+categories = ["command-line-utilities", "development-tools", "gui"]
 readme = "README.md"
 version.workspace = true
 authors.workspace = true

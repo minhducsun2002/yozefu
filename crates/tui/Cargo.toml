@@ -6,8 +6,7 @@ readme = "README.md"
 categories = [
     "command-line-utilities",
     "gui",
-    "development-tools",
-    "visualization",
+    "development-tools"
 ]
 version.workspace = true
 authors.workspace = true

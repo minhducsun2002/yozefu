@@ -245,7 +245,6 @@ jobs:
         annotations: ${{ steps.meta.outputs.annotations }}
     # https://github.com/actions/attest-build-provenance
     - name: Generate artifact attestation
-      if: false
       uses: actions/attest-build-provenance@v1
       with:
         subject-name: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}

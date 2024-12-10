@@ -1,11 +1,11 @@
 # Yōzefu
 
-<a href="https://github.com/MAIF/yozefu/releases"><img src="https://img.shields.io/github/v/release/MAIF/yozefu?style=flatd&color=f8be75&logo=GitHub"></a>
+<!--
+<a href="https://github.com/MAIF/yozefu/releases"><img src="https://img.shields.io/github/v/release/MAIF/yozefu?style=flatd&color=f8be75&logo=GitHub"></a>-->
 <a href="https://crates.io/crates/yozefu/"><img src="https://img.shields.io/crates/v/yozefu?logo=Rust"></a>
 <a href="https://github.com/MAIF/yozefu/actions/workflows/build.yml"><img src="https://github.com/MAIF/yozefu/actions/workflows/build.yml/badge.svg" alt="Build status"/></a>
-<a href="https://docs.rs/yozefu/"><img src="https://img.shields.io/docsrs/yozefu?logo=Rust"></a>
 <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/MSRV-1.80.1+-lightgray.svg?logo=rust" alt="Minimum supported Rust version: 1.80.1 or plus"/></a>
-<a href="https://github.com/MAIF/yozefu/blob/main/LICENSE"><img src="https://img.shields.io/github/license/MAIF/yozefu" alt="Licence"/></a>
+<a href="https://github.com/MAIF/yozefu/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="Licence"/></a>
 
 
 Yōzefu is an interactive terminal user interface (TUI) application for exploring data of a kafka cluster.

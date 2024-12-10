@@ -1,11 +1,9 @@
 [package]
 name = "yozefu"
 description = "yozefu is a CLI tool for Apache kafka. It allows you to navigate topics and search Kafka records."
-readme = "README.md"
-keywords = ["kafka", "consumer", "ratatui"]
+keywords = ["kafka", "consumer", "avro", "tui", "ratatui"]
 categories = [
     "command-line-utilities",
-    "command-line-interface",
     "gui",
     "development-tools",
 ]
@@ -15,6 +13,7 @@ edition.workspace = true
 homepage.workspace = true
 license.workspace = true
 repository.workspace = true
+readme.workspace = true
 
 [[bin]]
 name = "yozf"

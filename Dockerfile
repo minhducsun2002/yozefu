@@ -37,8 +37,8 @@ WORKDIR /home/yozefu
 ENTRYPOINT ["/bin/app"]
 
 
-# docker pull ghcr.io/maif/yozefu:main
-# gh attestation verify --owner MAIF oci://ghcr.io/maif/yozefu:main
+# docker pull ghcr.io/maif/yozefu:latest
+# gh attestation verify --owner MAIF oci://ghcr.io/maif/yozefu:latest
 #
-# docker run --rm -it ghcr.io/maif/yozefu:main -c localhost
+# docker run --rm -it ghcr.io/maif/yozefu:latest -c localhost
 # configuration is located at '/home/yozefu/.config/yozefu/config.json'
