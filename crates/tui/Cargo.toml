@@ -1,7 +1,7 @@
 [package]
 name = "yozefu-tui"
 description = "A TUI for browsing kafka topics"
-keywords = ["kafka", "consumer", "replace", "regex"]
+keywords = ["kafka", "consumer", "tui", "terminal"]
 readme = "README.md"
 categories = [
     "command-line-utilities",

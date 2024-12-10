@@ -273,7 +273,7 @@ jobs:
           cargo publish --dry-run -p yozefu-app
           cargo publish --dry-run -p yozefu-tui
           cargo publish --dry-run -p yozefu-command
-          cargo publish --dry-run -p yozefu-bin
+          cargo publish --dry-run -p yozefu
       - name: Publish the crates
         run: |
           cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-lib
@@ -281,4 +281,4 @@ jobs:
           cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-app
           cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-tui
           cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-command
-          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-bin
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu

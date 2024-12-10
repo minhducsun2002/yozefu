@@ -2,7 +2,7 @@
 name = "yozefu-wasm-types"
 readme = "README.md"
 description = "Types and structures for defining WebAssembly modules"
-keywords = ["wasm", "kafka", "record"]
+keywords = ["wasm", "kafka"]
 categories = []
 version.workspace = true
 authors.workspace = true
