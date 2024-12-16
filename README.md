@@ -93,12 +93,12 @@ yozf -c localhost
 
 ## Documentation
 
- - [The query language.](./docs/query-language/README.md)
- - [Creating a search filter.](./docs/search-filter/README.md)
- - [TLS encryption and authentication](./docs/tls/README.md).
- - [URL templates to switch to web applications.](./docs/url-templates/README.md)
- - [Schema registry.](./docs/schema-registry/README.md)
- - [Themes.](./docs/themes/README.md)
- - [Keybindings.](./docs/keybindings/README.md)
- - [Releasing a new version.](./docs/release/README.md)
+ - [The query language.](https://github.com/MAIF/yozefu/tree/main/docs/query-language/README.md)
+ - [Creating a search filter.](https://github.com/MAIF/yozefu/tree/main/docs/search-filter/README.md)
+ - [TLS encryption and authentication](https://github.com/MAIF/yozefu/tree/main/docs/tls/README.md).
+ - [URL templates to switch to web applications.](https://github.com/MAIF/yozefu/tree/main/docs/url-templates/README.md)
+ - [Schema registry.](https://github.com/MAIF/yozefu/tree/main/docs/schema-registry/README.md)
+ - [Themes.](https://github.com/MAIF/yozefu/tree/main/docs/themes/README.md)
+ - [Keybindings.](https://github.com/MAIF/yozefu/tree/main/docs/keybindings/README.md)
+ - [Releasing a new version.](https://github.com/MAIF/yozefu/tree/main/docs/release/README.md)
  
