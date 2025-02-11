@@ -111,18 +111,18 @@ yozf -c localhost
 <table>
   <tr>
     <td>
-      <img alt="A table listing topics and kafka records" src="./docs/screenshots/topics.png">
+      <img alt="A table listing topics and kafka records" src="https://raw.githubusercontent.com/MAIF/yozefu/refs/heads/main/docs/screenshots/topics.png">
     </td>
     <td>
-      <img alt="A table listing kafka records" src="./docs/screenshots/records.png">
+      <img alt="A table listing kafka records" src="https://raw.githubusercontent.com/MAIF/yozefu/refs/heads/main/docs/screenshots/records.png">
     </td>
   </tr>
   <tr>
     <td>
-      <img alt="View of a selected kafka records" src="./docs/screenshots/record.png">
+      <img alt="View of a selected kafka records" src="https://raw.githubusercontent.com/MAIF/yozefu/refs/heads/main/docs/screenshots/record.png">
     </td>
     <td>
-      <img alt="View of the help page" src="./docs/screenshots/help.png">
+      <img alt="View of the help page" src="https://raw.githubusercontent.com/MAIF/yozefu/refs/heads/main/docs/screenshots/help.png">
     </td>
   </tr>
 </table>
