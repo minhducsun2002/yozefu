@@ -95,7 +95,7 @@ where
         let config = self.read_config()?;
         match config.clusters.get(&cluster.to_string()) {
             Some(c) => Ok(YozefuConfig::new(c.clone())),
-            None => Err(Error::Error(format!("Unknown cluster '{}'. Make sure you have defined a configuration for this cluster name.", cluster))),
+            None => Err(Error::Error(format!("Unknown cluster '{}'. Make sure you have defined a configuration for this cluster or specify another cluster with the '--cluster' option.", cluster))),
         }
     }
 }
