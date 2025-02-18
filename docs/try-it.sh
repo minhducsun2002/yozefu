@@ -108,20 +108,31 @@ function instructions {
     fi
 }
 
-check_commands_are_installed
-
-if [ "$BASH_SOURCE" = "" ]; then
+function clone_repository {
     if [ ! -d /tmp/yozefu ]; then
         echo " 🪂 Cloning 'git@github.com:MAIF/yozefu.git' to '/tmp/yozefu'"
         git clone git@github.com:MAIF/yozefu.git --depth 1 /tmp/yozefu
     else
         git -C /tmp/yozefu pull
     fi
+}
+
+check_commands_are_installed
+
+
+if [ "$BASH_SOURCE" = "" ]; then
+    clone_repository
     bash /tmp/yozefu/docs/try-it.sh
     exit 0
 fi
 
 repo=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )/.." &> /dev/null && pwd )
+if [ ! -f "$repo/Cargo.toml" ]; then
+    clone_repository
+    cp "$( dirname -- "${BASH_SOURCE[0]}" )/try-it.sh" /tmp/yozefu/docs/try-it.sh
+    bash /tmp/yozefu/docs/try-it.sh
+fi
+
 topic="public-french-addresses"
 query="kafka"
 type="json"
@@ -143,6 +154,7 @@ if [ $# -ge 4 ]; then
 fi
 
 
+echo " 📦 Repository is '$repo'"
 echo " 🐋 Starting kafka"
 docker compose -f "${repo}/compose.yml" up kafka schema-registry -d --wait --no-recreate
 docker compose -f "${repo}/compose.yml" exec -T kafka \
