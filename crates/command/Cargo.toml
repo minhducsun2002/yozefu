@@ -1,6 +1,6 @@
 [package]
 name = "yozefu-command"
-description = "Clap commands of yozefu"
+description = "Clap commands of Yozefu"
 keywords = ["argument", "cli", "tui", "parser", "parse"]
 readme = "README.md"
 categories = [

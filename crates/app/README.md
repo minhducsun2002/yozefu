@@ -4,9 +4,7 @@
 [![](https://img.shields.io/crates/v/yozefu-app.svg)](https://crates.io/crates/yozefu-app)
 
 
-This library contains the code for the main kafka consumer and all the logic to filter kafka records based on the user-provided search query.
-
-
+This library contains the code for the kafka consumer and all the logic to filter kafka records based on the user-provided search query for [Yozefu](https://github.com/MAIF/yozefu).
 
 ## Usage
 

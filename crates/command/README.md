@@ -4,7 +4,7 @@
 [![The crate](https://img.shields.io/crates/v/yozefu-command.svg)](https://crates.io/crates/yozefu-command)
 
 
-This library contains the `clap` commands of [yozefu](https://github.com/MAIF/yozefu):
+This library contains the `clap` commands of [Yozefu](https://github.com/MAIF/yozefu):
  - `configure` to access to the configuration file.
  - `create-filter` to crate a new search filter
  - `import-filter` to import the search filter to the tool.

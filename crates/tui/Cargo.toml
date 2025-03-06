@@ -1,6 +1,6 @@
 [package]
 name = "yozefu-tui"
-description = "A TUI for browsing kafka topics"
+description = "library for rendering the TUI of Yozefu"
 keywords = ["kafka", "consumer", "tui", "terminal"]
 readme = "README.md"
 categories = [
