@@ -228,20 +228,11 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      #- name: Make sure crates are ready
-      #  continue-on-error: true
-      #  run: |
-      #    cargo publish --dry-run -p yozefu-lib
-      #    cargo publish --dry-run -p yozefu-wasm-types
-      #    cargo publish --dry-run -p yozefu-app
-      #    cargo publish --dry-run -p yozefu-tui
-      #    cargo publish --dry-run -p yozefu-command
-      #    cargo publish --dry-run -p yozefu
       - name: Publish the crates
         run: |
-          # cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-lib
-          # cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-wasm-types
-          # cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-app
-          # cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-tui
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-lib
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-wasm-types
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-app
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-tui
           cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu-command
           cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p yozefu
