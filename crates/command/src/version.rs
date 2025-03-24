@@ -7,8 +7,7 @@
 //! https://github.com/MAIF/yozefu
 //! Yann Prono <yann.prono@maif.fr>
 //! ```
-use const_format::{formatcp, str_index, str_split};
-use const_str::split_lines;
+use const_format::{formatcp, str_index};
 use std::env::consts::{ARCH, OS};
 
 #[cfg(debug_assertions)]
@@ -19,10 +18,7 @@ const BUILD_TYPE: &'static str = "release";
 
 const GIT_BRANCH: &str = match option_env!("GITHUB_REF_NAME") {
     Some(v) => v,
-    None => {
-        const FIRST_LINE: &str = split_lines!(include_str!("../../../.git/HEAD"))[0];
-        str_split!(FIRST_LINE, "/")[2]
-    }
+    None => "unknown"
 };
 
 const GIT_COMMIT: &str = match option_env!("GITHUB_SHA") {
